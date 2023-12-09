@@ -33,7 +33,7 @@ func GetVerificationQRCode(c echo.Context) error {
 							},
 							"context": "ipfs://QmWamN8tGpJjKdr1NDEduedP16CH85W4Ua8oBi4NE3MAqA",
 							"credentialSubject": map[string]interface{}{
-								"token": map[string]interface{}{
+								"isBuilder": map[string]interface{}{
 									"$eq": 1,
 								},
 							},

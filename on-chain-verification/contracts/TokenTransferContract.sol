@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TokenTransferContract is ZKPVerifier {
     uint64 public constant VOTE_REQUEST_ID = 1701840378;
-    uint64 public constant TRANSFER_REQUEST_ID = 1702134721;
+    uint64 public constant TRANSFER_REQUEST_ID = 1702148496;
 
     IERC20 public token;
     mapping(uint256 => uint256) public idMap;
