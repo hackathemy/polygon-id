@@ -9,7 +9,7 @@ func main() {
 	e := echo.New()
 
 	// "/api" 경로 접두사를 가진 그룹 생성
-	e.GET("/v1/claim", router.GetVerificationQRCode)
+	e.GET("/v1/votes/:contractAddress", router.GetVerificationQRCode)
 
 	e.Logger.Fatal(e.Start(":3001"))
 }
