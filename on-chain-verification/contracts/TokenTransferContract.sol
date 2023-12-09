@@ -18,8 +18,9 @@ contract TokenTransferContract is ZKPVerifier {
     address public builder=0xa763ebb58Fc66220F208e697E585a4197A941c84;
     event TokensTransferred(address indexed from, address indexed to, uint256 amount);
 
-     constructor(uint64 _votesTheshhold, address _tokenAddress) {
+     constructor(uint64 _votesTheshhold,address _builder, address _tokenAddress) {
         votesTheshhold=_votesTheshhold;
+        builder=_builder;
         token = IERC20(_tokenAddress);
     }
 

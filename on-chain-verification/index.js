@@ -6,7 +6,6 @@ const app = express();
 const port = 3003;
 app.use(express.json());
 
-const TOKEN_ADDRESS="0x844c811c0dc060808ac024b6e300499cbbd574b7";
 const { Web3 } = require('web3');
 const { poseidon } = require('@iden3/js-crypto');
 const { SchemaHash } = require('@iden3/js-iden3-core');
@@ -20,79 +19,78 @@ const Operators = {
   IN : 4, // in
   NIN : 5, // not in
   NE : 6   // not equal
-}    
+}
 
 app.post('/v1/contract/deploy', async (req, res) => {
-    try {
-     
+  try {
 
-        const builder= req.body.builder;
-        const votesTheshhold= req.body.votesTheshhold;
-        console.log(builder)
-        console.log(votesTheshhold)
-     
-        const contractAddress = await deployContract(votesTheshhold, builder);
-        await setZKPRequest(contractAddress)
 
-        res.json({contractAddress: contractAddress });
-    } catch (error) {
-      console.error('Error deploying contract:', error);
-      res.status(500).send('Internal Server Error');
-    }
-  });
-  
-  app.listen(port, () => {
-    console.log(`Express app listening at http://localhost:${port}`);
-  });
+    const builder= req.body.builder;
+    const votesTheshhold= req.body.votesTheshhold;
+    const tokenAddress= req.body.tokenAddress;
 
-  async function deployContract(votesTheshhold,builder,) {
-    const [deployer] = await ethers.getSigners();
-    console.log('Deploying contract with address:', deployer.address);
-    const verifierContract = "TokenTransferContract";
-    
-    const ERC20Verifier = await ethers.getContractFactory(verifierContract);
-    const erc20Verifier = await ERC20Verifier.deploy(
-      votesTheshhold,TOKEN_ADDRESS
-    );
-    
-    await erc20Verifier.deployed()
+    const contractAddress = await deployContract(votesTheshhold, builder,tokenAddress);
+    await setZKPRequest(contractAddress)
 
-    
-    console.log(" contract address:", erc20Verifier.address);;
-    return  erc20Verifier.address;
+    res.json({contractAddress: contractAddress });
+  } catch (error) {
+    console.error('Error deploying contract:', error);
+    res.status(500).send('Internal Server Error');
   }
+});
+
+app.listen(port, () => {
+  console.log(`Express app listening at http://localhost:${port}`);
+});
+
+async function deployContract(votesTheshhold,builder,tokenAddress) {
+  const [deployer] = await ethers.getSigners();
+  console.log('Deploying contract with address:', deployer.address);
+  const verifierContract = "TokenTransferContract";
+
+  const ERC20Verifier = await ethers.getContractFactory(verifierContract);
+  const erc20Verifier = await ERC20Verifier.deploy(
+      votesTheshhold,builder,tokenAddress
+  );
+
+  await erc20Verifier.deployed()
+
+
+  console.log(" contract address:", erc20Verifier.address);;
+  return  erc20Verifier.address;
+}
 
 
 
 function packValidatorParams(query, allowedIssuers = []) {
   let web3 = new Web3(Web3.givenProvider || 'wss://polygon-mumbai.g.alchemy.com/v2/W6qdHNAQ5hacjzn31F5_53PH5N2Rrn3a');
   return web3.eth.abi.encodeParameter(
-    {
-      CredentialAtomicQuery: {
-        schema: 'uint256',
-        claimPathKey: 'uint256',
-        operator: 'uint256',
-        slotIndex: 'uint256',
-        value: 'uint256[]',
-        queryHash: 'uint256',
-        allowedIssuers: 'uint256[]',
-        circuitIds: 'string[]',
-        skipClaimRevocationCheck: 'bool',
-        claimPathNotExists: 'uint256'
+      {
+        CredentialAtomicQuery: {
+          schema: 'uint256',
+          claimPathKey: 'uint256',
+          operator: 'uint256',
+          slotIndex: 'uint256',
+          value: 'uint256[]',
+          queryHash: 'uint256',
+          allowedIssuers: 'uint256[]',
+          circuitIds: 'string[]',
+          skipClaimRevocationCheck: 'bool',
+          claimPathNotExists: 'uint256'
+        }
+      },
+      {
+        schema: query.schema,
+        claimPathKey: query.claimPathKey,
+        operator: query.operator,
+        slotIndex: query.slotIndex,
+        value: query.value,
+        queryHash: query.queryHash,
+        allowedIssuers: allowedIssuers,
+        circuitIds: query.circuitIds,
+        skipClaimRevocationCheck: query.skipClaimRevocationCheck,
+        claimPathNotExists: query.claimPathNotExists
       }
-    },
-    {
-      schema: query.schema,
-      claimPathKey: query.claimPathKey,
-      operator: query.operator,
-      slotIndex: query.slotIndex,
-      value: query.value,
-      queryHash: query.queryHash,
-      allowedIssuers: allowedIssuers,
-      circuitIds: query.circuitIds,
-      skipClaimRevocationCheck: query.skipClaimRevocationCheck,
-      claimPathNotExists: query.claimPathNotExists
-    }
   );
 }
 
@@ -102,12 +100,12 @@ function coreSchemaFromStr(schemaIntString) {
 };
 
 function calculateQueryHash(
-  values,
-  schema,
-  slotIndex,
-  operator,
-  claimPathKey,
-  claimPathNotExists
+    values,
+    schema,
+    slotIndex,
+    operator,
+    claimPathKey,
+    claimPathNotExists
 ) {
   const expValue = prepareCircuitArrayValues(values, 64);
   const valueHash = poseidon.spongeHashX(expValue, 6);
@@ -132,7 +130,7 @@ async function setZKPRequest(contractAddress) {
 
   const type = 'DAOVerificationToken';
   const schemaUrl = 'ipfs://QmQb3pfSfmFZNQapcXk3zdnDnmmpqmiZ6YWFcCwyq14ajM';
-   // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
+  // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
   const schemaClaimPathKey = "18694576051158235627586407093896000546137977171154473590197366253690295065210"
 
   const requestId = 1701840378;
@@ -147,65 +145,65 @@ async function setZKPRequest(contractAddress) {
     circuitIds: ['credentialAtomicQuerySigV2OnChain'],
     skipClaimRevocationCheck: false,
     claimPathNotExists: 0
-    };
+  };
 
-  
+
   query.queryHash = calculateQueryHash(
-        query.value,
-        query.schema,
-        query.slotIndex,
-        query.operator,
-        query.claimPathKey,
-        query.claimPathNotExists
-      ).toString();
-    
+      query.value,
+      query.schema,
+      query.slotIndex,
+      query.operator,
+      query.claimPathKey,
+      query.claimPathNotExists
+  ).toString();
+
   // add the address of the contract just deployed
-  
+
   let erc20Verifier = await ethers.getContractAt("TokenTransferContract", contractAddress)
-  
-  
+
+
   const validatorAddress = "0x1E4a22540E293C0e5E8c33DAfd6f523889cFd878"; // sig validator
   // const validatorAddress = "0x0682fbaA2E4C478aD5d24d992069dba409766121"; // mtp validator
 
   const invokeRequestMetadata = {
-        id: '7f38a193-0918-4a48-9fac-36adfdb8b542',
-        typ: 'application/iden3comm-plain-json',
-        type: 'https://iden3-communication.io/proofs/1.0/contract-invoke-request',
-        thid: '7f38a193-0918-4a48-9fac-36adfdb8b542',
-        body: {
-          reason: 'airdrop participation',
-          transaction_data: {
-            contract_address: contractAddress,
-            method_id: 'b68967e2',
-            chain_id: 80001,
-            network: 'polygon-mumbai'
-          },
-          scope: [
-            {
-              id: query.requestId,
-              circuitId: query.circuitIds[0],
-              query: {
-                allowedIssuers: ['did:polygonid:polygon:mumbai:2qNzSKEuYnHwN7NgdmVM8DMYgpWVnCtnup1esfeCJ1'],
-                context: schemaUrl,
-                credentialSubject: {
-                  token: {
-                    $gt: query.value[0]
-                  }
-                },
-                type
+    id: '7f38a193-0918-4a48-9fac-36adfdb8b542',
+    typ: 'application/iden3comm-plain-json',
+    type: 'https://iden3-communication.io/proofs/1.0/contract-invoke-request',
+    thid: '7f38a193-0918-4a48-9fac-36adfdb8b542',
+    body: {
+      reason: 'airdrop participation',
+      transaction_data: {
+        contract_address: contractAddress,
+        method_id: 'b68967e2',
+        chain_id: 80001,
+        network: 'polygon-mumbai'
+      },
+      scope: [
+        {
+          id: query.requestId,
+          circuitId: query.circuitIds[0],
+          query: {
+            allowedIssuers: ['did:polygonid:polygon:mumbai:2qNzSKEuYnHwN7NgdmVM8DMYgpWVnCtnup1esfeCJ1'],
+            context: schemaUrl,
+            credentialSubject: {
+              token: {
+                $gt: query.value[0]
               }
-            }
-          ]
+            },
+            type
+          }
         }
-      };
+      ]
+    }
+  };
 
   try {
-     const txId = await erc20Verifier.setZKPRequest(
+    const txId = await erc20Verifier.setZKPRequest(
         requestId, {
-        metadata: JSON.stringify(invokeRequestMetadata),
-        validator: validatorAddress,
-        data: packValidatorParams(query)
-      });
+          metadata: JSON.stringify(invokeRequestMetadata),
+          validator: validatorAddress,
+          data: packValidatorParams(query)
+        });
     console.log("Request set: ", txId.hash);
   } catch (e) {
     console.log("error: ", e);
