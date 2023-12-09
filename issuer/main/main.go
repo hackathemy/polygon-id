@@ -13,6 +13,6 @@ func main() {
 	v1ClaimGroup := e.Group("/v1/claim")
 
 	v1ClaimGroup.GET("/authentication", router.GetAuthenticationQRCode)
-	v1ClaimGroup.POST("/:sessionId", router.CreateClaim)
+	v1ClaimGroup.POST("/:claimType/:sessionId", router.CreateClaim)
 	e.Logger.Fatal(e.Start(":3000"))
 }
