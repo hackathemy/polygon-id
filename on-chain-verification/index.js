@@ -1,10 +1,13 @@
 const express = require('express');
 const { ethers } = require('hardhat');
+const cors = require('cors');
 
 
 const app = express();
 const port = 3003;
 app.use(express.json());
+
+app.use(cors());
 
 const { Web3 } = require('web3');
 const { poseidon } = require('@iden3/js-crypto');
@@ -72,7 +75,7 @@ function packValidatorParams(query, allowedIssuers,isBuilder = []) {
           claimPathKey: 'uint256',
           operator: 'uint256',
           slotIndex: 'uint256',
-          value: isBuilder?'bool[]':'uint256[]',
+          value: isBuilder?'uint256[]':'uint256[]',
           queryHash: 'uint256',
           allowedIssuers: 'string[]',
           circuitIds: 'string[]',
@@ -109,6 +112,7 @@ function calculateQueryHash(
     claimPathNotExists
 ) {
   const expValue = prepareCircuitArrayValues(values, 64);
+  console.log(expValue)
   const valueHash = poseidon.spongeHashX(expValue, 6);
   const schemaHash = coreSchemaFromStr(schema);
   const quaryHash = poseidon.hash([
@@ -131,22 +135,22 @@ async function setZKPRequest(contractAddress,isBuilder) {
   //const allowedIssuers = ['did:polygonid:polygon:mumbai:2qNzSKEuYnHwN7NgdmVM8DMYgpWVnCtnup1esfeCJ1'];
 
   if(isBuilder){
-    const schemaBigInt = "296850122618163792457160322232613027261"
+    const schemaBigInt = "23041654102933995037148138641656024375"
 
     const type = 'ReFreshBuilder';
-    const schemaUrl = 'ipfs://QmXPD8MJyWcfCqgSLnT7Uj6AGVYWxGfmx4ocGJLzyDNouN';
+    const schemaUrl = 'ipfs://QmcQKvKoYe1JEjiyax9W24hSgM4aBdYG17hTMde5tYkcWi';
     // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
-    const schemaClaimPathKey = "653965822922708731068757542488129789379726011791271792822447604518758144836"
+    const schemaClaimPathKey = "16994549609075421555055963200251015230454493233885889628524946222050737848996"
 
-    const requestId = 1702134721;
+    const requestId = 1702145394;
 
     const query = {
       requestId,
       schema: schemaBigInt,
       claimPathKey: schemaClaimPathKey,
-      operator: Operators.EQ,
+      operator: Operators.GT,
       slotIndex: 0,
-      value: [1, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
+      value: [0, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
       circuitIds: ['credentialAtomicQuerySigV2OnChain'],
       skipClaimRevocationCheck: false,
       claimPathNotExists: 0
@@ -165,7 +169,6 @@ async function setZKPRequest(contractAddress,isBuilder) {
     // add the address of the contract just deployed
 
     let daoVerifier = await ethers.getContractAt("TokenTransferContract", contractAddress)
-
 
     const validatorAddress = "0x1E4a22540E293C0e5E8c33DAfd6f523889cFd878"; // sig validator
     // const validatorAddress = "0x0682fbaA2E4C478aD5d24d992069dba409766121"; // mtp validator
@@ -191,8 +194,8 @@ async function setZKPRequest(contractAddress,isBuilder) {
               allowedIssuers: allowedIssuers,
               context: schemaUrl,
               credentialSubject: {
-                builder: {
-                  $eq: query.value[0]
+                isBuilder: {
+                  $gt: query.value[0]
                 }
               },
               type
