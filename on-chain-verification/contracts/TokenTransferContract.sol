@@ -52,7 +52,7 @@ contract TokenTransferContract is ZKPVerifier {
         if (requestId == VOTE_REQUEST_ID) {
             // check that user id is not already voted
             require(
-                idMap[id] == 0,
+                idMap[id] == 1,
                 "user already voted"
             );
             idMap[id]=1;
@@ -69,11 +69,5 @@ contract TokenTransferContract is ZKPVerifier {
                     }
         }
 
-
-
-
-        
-
-       
     }
 }

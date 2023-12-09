@@ -32,6 +32,17 @@ type DAOVerificationToken struct {
 	MtProof        bool `json:"mtProof"`
 }
 
+type ReFreshBuilder struct {
+	CredentialSchema  string `json:"credentialSchema"`
+	Type              string `json:"type"`
+	CredentialSubject struct {
+		ID        string `json:"id"`
+		IsBuilder int    `json:"isBuilder"`
+	} `json:"credentialSubject"`
+	SignatureProof bool `json:"signatureProof"`
+	MtProof        bool `json:"mtProof"`
+}
+
 type Connection struct {
 	CreatedAt  string `json:"createdAt"`
 	ID         string `json:"id"`
@@ -46,6 +57,7 @@ type CreateClaimRequest struct {
 
 func CreateClaim(c echo.Context) error {
 	sessionId := c.Param("sessionId")
+	claimType := c.Param("claimType")
 	var createClaimRequest CreateClaimRequest
 	if err := c.Bind(&createClaimRequest); err != nil {
 		return err
@@ -72,7 +84,14 @@ func CreateClaim(c echo.Context) error {
 
 	createApiURL := fmt.Sprintf("%s/v1/%s/claims", IssuerHost, IssuerDID)
 	// JSON으로 변환
-	jsonData, err := json.Marshal(makeClaimData(userID, tokenNumber))
+	var jsonData []byte
+	if claimType == "builder" {
+		jsonData, err = json.Marshal(makeClaimData(userID, tokenNumber))
+	} else if claimType == "funder" {
+		jsonData, err = json.Marshal(makeClaimData2(userID))
+	} else {
+		return c.String(http.StatusInternalServerError, "Error reading response")
+	}
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Error marshaling JSON")
 	}
@@ -139,6 +158,23 @@ func makeClaimData(userId string, tokenNumber int) DAOVerificationToken {
 		}{
 			ID:    userId,
 			Token: tokenNumber,
+		},
+		SignatureProof: true,
+		MtProof:        true,
+	}
+	return credential
+}
+
+func makeClaimData2(userId string) ReFreshBuilder {
+	credential := ReFreshBuilder{
+		CredentialSchema: "ipfs://QmTcVnJn1u8aM5NBYs3wBhtZhSAQqFtABM3tik765XzPgE",
+		Type:             "ReFreshBuilder",
+		CredentialSubject: struct {
+			ID        string `json:"id"`
+			IsBuilder int    `json:"isBuilder"`
+		}{
+			ID:        userId,
+			IsBuilder: 1,
 		},
 		SignatureProof: true,
 		MtProof:        true,

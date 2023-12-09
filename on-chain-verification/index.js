@@ -77,7 +77,7 @@ function packValidatorParams(query, allowedIssuers,isBuilder = []) {
           slotIndex: 'uint256',
           value: isBuilder?'uint256[]':'uint256[]',
           queryHash: 'uint256',
-          allowedIssuers: 'string[]',
+          allowedIssuers: 'uint256[]',
           circuitIds: 'string[]',
           skipClaimRevocationCheck: 'bool',
           claimPathNotExists: 'uint256'
@@ -90,7 +90,7 @@ function packValidatorParams(query, allowedIssuers,isBuilder = []) {
         slotIndex: query.slotIndex,
         value: query.value,
         queryHash: query.queryHash,
-        allowedIssuers: allowedIssuers,
+        allowedIssuers: [],
         circuitIds: query.circuitIds,
         skipClaimRevocationCheck: query.skipClaimRevocationCheck,
         claimPathNotExists: query.claimPathNotExists
@@ -135,22 +135,22 @@ async function setZKPRequest(contractAddress,isBuilder) {
   //const allowedIssuers = ['did:polygonid:polygon:mumbai:2qNzSKEuYnHwN7NgdmVM8DMYgpWVnCtnup1esfeCJ1'];
 
   if(isBuilder){
-    const schemaBigInt = "23041654102933995037148138641656024375"
+    const schemaBigInt = "4174810409265315245331249378998401719"
 
     const type = 'ReFreshBuilder';
-    const schemaUrl = 'ipfs://QmcQKvKoYe1JEjiyax9W24hSgM4aBdYG17hTMde5tYkcWi';
+    const schemaUrl = 'ipfs://QmWamN8tGpJjKdr1NDEduedP16CH85W4Ua8oBi4NE3MAqA';
     // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
-    const schemaClaimPathKey = "16994549609075421555055963200251015230454493233885889628524946222050737848996"
+    const schemaClaimPathKey = "16444678393588006201827608929727578052908209026381139130045458653892476365976"
 
-    const requestId = 1702145394;
+    const requestId = 1702148496;
 
     const query = {
       requestId,
       schema: schemaBigInt,
       claimPathKey: schemaClaimPathKey,
-      operator: Operators.GT,
+      operator: Operators.EQ,
       slotIndex: 0,
-      value: [0, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
+      value: [1, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
       circuitIds: ['credentialAtomicQuerySigV2OnChain'],
       skipClaimRevocationCheck: false,
       claimPathNotExists: 0
@@ -195,7 +195,7 @@ async function setZKPRequest(contractAddress,isBuilder) {
               context: schemaUrl,
               credentialSubject: {
                 isBuilder: {
-                  $gt: query.value[0]
+                  $eq: query.value[0]
                 }
               },
               type
