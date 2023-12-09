@@ -29,7 +29,7 @@ func makeClaimData(userId string, tokenNumber int) DAOVerificationToken {
 ```
 
 VC를 생성하기 위해서는 사용자의 DID가 필요합니다.
-사용자의 DID값을 얻기 위하여 http://127.0.0.1:3000/v1/claim/authentication를 호출하여 authentication QR코드를 만들어서 인증을 받습니다.
+사용자의 DID값을 얻기 위하여 http://{{host}}:3000/v1/claim/authentication를 호출하여 authentication QR코드를 만들어서 인증을 받습니다.
 
 <img width="1000" alt="image" src="https://github.com/pjhnocegood/polygon-id/assets/36693435/4e03ecc6-4a39-458a-9266-54c563fa0ee9">
 
@@ -43,19 +43,30 @@ QRLINK에 있는 값으로 QRCODE를 생성 후 PoyglonID APP을 통하여 스�
 ![image](https://github.com/pjhnocegood/polygon-id/assets/36693435/6ceaec99-211f-47bd-9435-1908bbaae5db)
 
 
-http://127.0.0.1:3000/v1/claim/{{sessionID}}위의 API를 통해서 받은 sessionID와 보유 토큰수를 입력하여 VC를 생성하는 QR코드 값을 받습니다.
+http://{{host}}:3000/v1/claim/{{sessionID}}위의 API를 통해서 받은 sessionID와 보유 토큰수를 입력하여 VC를 생성하는 QR코드 값을 받습니다.
 <img width="994" alt="image" src="https://github.com/pjhnocegood/polygon-id/assets/36693435/c88968d0-cf11-4060-a962-46779da48aca">
 
 위의 API를 통해 받은 JSON데이터로  QRCODE를 생성 후 PoyglonID APP을 통하여 스캔하면 POLYGON-ID APP에 VC가 생성 됩니다.
 <img width="1154" alt="image" src="https://github.com/pjhnocegood/polygon-id/assets/36693435/666378cb-71d4-4381-83a6-abce33aa4621">
 
-http://127.0.0.1:3003/v1/contract/deploy를 호출하여 생성한 VC를 검증할 스마트컨트랙트를 배포하고 ZK로 어떤 내용을 검증할지 정의합니다.
+http://{{host}}:3003/v1/contract/deploy를 호출하여 생성한 VC를 검증할 스마트컨트랙트를 배포하고 ZK로 어떤 내용을 검증할지 정의합니다.
 
 
 아래의 예제는 votesTheshhold를 넘는 투표를 받으면 해당 컨트랙트가 가지고 있는 tokenAddress에 해당하는 토큰을 builder에게 전달하는 컨트랙트 예제 입니다.
 <img width="1000" alt="image" src="https://github.com/pjhnocegood/polygon-id/assets/36693435/3797d7f8-d7d6-406e-a229-d7b35fb1e60e">
 
 https://github.com/pjhnocegood/polygon-id/blob/main/on-chain-verification/contracts/TokenTransferContract.sol
+
+
+투표를 하기 위한 QR코드를 만듭니다.
+iden3comm://?request_uri=http://{{host}}:3001/v1/votes/{{contractAddress}}
+<img width="1154" alt="image" src="https://github.com/pjhnocegood/polygon-id/assets/36693435/e7983445-1568-493d-bfca-40bf7d28fbdb">
+
+PoyglonID APP을 통하여 스캔 후 ZK proof를 만들어 트랜잭션을 발생 시킵니다.
+![image](https://github.com/pjhnocegood/polygon-id/assets/36693435/d7cbec48-eeda-483a-acc0-95aac276ad76)
+![image](https://github.com/pjhnocegood/polygon-id/assets/36693435/c366f270-de35-4c05-9c82-e411afd29470)
+![image](https://github.com/pjhnocegood/polygon-id/assets/36693435/04e10912-d59c-49e8-83d1-bd906b93b1a6)
+![image](https://github.com/pjhnocegood/polygon-id/assets/36693435/f4ffc109-a290-42f2-858e-5775ec3a7ab8)
 
 
 
