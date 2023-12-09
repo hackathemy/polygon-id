@@ -13,8 +13,8 @@ const Operators = {
   NE : 6   // not equal
 }
 
-function packValidatorParams(query, allowedIssuers = []) {
-  let web3 = new Web3(Web3.givenProvider || 'wss://polygon-mumbai.g.alchemy.com/v2/W6qdHNAQ5hacjzn31F5_53PH5N2Rrn3a');
+  function packValidatorParams(query, allowedIssuers = []) {
+  let web3 = new Web3(Web3.givenProvider || 'wss://polygon-mumbai.g.alchemy.com/v2/');
   return web3.eth.abi.encodeParameter(
     {
       CredentialAtomicQuery: {
@@ -37,7 +37,7 @@ function packValidatorParams(query, allowedIssuers = []) {
       slotIndex: query.slotIndex,
       value: query.value,
       queryHash: query.queryHash,
-      allowedIssuers: allowedIssuers,
+      allowedIssuers: [],
       circuitIds: query.circuitIds,
       skipClaimRevocationCheck: query.skipClaimRevocationCheck,
       claimPathNotExists: query.claimPathNotExists

@@ -4,7 +4,7 @@
   "type": "https://iden3-communication.io/proofs/1.0/contract-invoke-request",
   "thid": "7f38a193-0918-4a48-9fac-36adfdb8b542",
   "body": {
-    "reason": "airdrop participation",
+    "reason": "vote for project",
     "transaction_data": {
       "contract_address": "0xf4B27c09eB7B5d75767f90D976b3561B90D6Ff43",
       "method_id": "b68967e2",

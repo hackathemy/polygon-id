@@ -30,7 +30,8 @@ app.post('/v1/contract/deploy', async (req, res) => {
     const tokenAddress= req.body.tokenAddress;
 
     const contractAddress = await deployContract(votesTheshhold, builder,tokenAddress);
-    await setZKPRequest(contractAddress)
+    await setZKPRequest(contractAddress,true)
+    await setZKPRequest(contractAddress,false)
 
     res.json({contractAddress: contractAddress });
   } catch (error) {
@@ -48,21 +49,21 @@ async function deployContract(votesTheshhold,builder,tokenAddress) {
   console.log('Deploying contract with address:', deployer.address);
   const verifierContract = "TokenTransferContract";
 
-  const ERC20Verifier = await ethers.getContractFactory(verifierContract);
-  const erc20Verifier = await ERC20Verifier.deploy(
+  const DAOVerifier = await ethers.getContractFactory(verifierContract);
+  const daoVerifier = await DAOVerifier.deploy(
       votesTheshhold,builder,tokenAddress
   );
 
-  await erc20Verifier.deployed()
+  await daoVerifier.deployed()
 
 
-  console.log(" contract address:", erc20Verifier.address);;
-  return  erc20Verifier.address;
+  console.log(" contract address:", daoVerifier.address);;
+  return  daoVerifier.address;
 }
 
 
 
-function packValidatorParams(query, allowedIssuers = []) {
+function packValidatorParams(query, allowedIssuers,isBuilder = []) {
   let web3 = new Web3(Web3.givenProvider || 'wss://polygon-mumbai.g.alchemy.com/v2/W6qdHNAQ5hacjzn31F5_53PH5N2Rrn3a');
   return web3.eth.abi.encodeParameter(
       {
@@ -71,9 +72,9 @@ function packValidatorParams(query, allowedIssuers = []) {
           claimPathKey: 'uint256',
           operator: 'uint256',
           slotIndex: 'uint256',
-          value: 'uint256[]',
+          value: isBuilder?'bool[]':'uint256[]',
           queryHash: 'uint256',
-          allowedIssuers: 'uint256[]',
+          allowedIssuers: 'string[]',
           circuitIds: 'string[]',
           skipClaimRevocationCheck: 'bool',
           claimPathNotExists: 'uint256'
@@ -122,92 +123,183 @@ function calculateQueryHash(
 }
 
 
-async function setZKPRequest(contractAddress) {
+async function setZKPRequest(contractAddress,isBuilder) {
 
   // you can run https://go.dev/play/p/3id7HAhf-Wi to get schema hash and claimPathKey using YOUR schema
   // suggestion: Use your own go application with that code rather than using playground (it can give a timeout just because it’s restricted by the size of dependency package)
-  const schemaBigInt = "278967279552142591952300574090397990154"
+  const allowedIssuers = ['*'];
+  //const allowedIssuers = ['did:polygonid:polygon:mumbai:2qNzSKEuYnHwN7NgdmVM8DMYgpWVnCtnup1esfeCJ1'];
 
-  const type = 'DAOVerificationToken';
-  const schemaUrl = 'ipfs://QmQb3pfSfmFZNQapcXk3zdnDnmmpqmiZ6YWFcCwyq14ajM';
-  // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
-  const schemaClaimPathKey = "18694576051158235627586407093896000546137977171154473590197366253690295065210"
+  if(isBuilder){
+    const schemaBigInt = "296850122618163792457160322232613027261"
 
-  const requestId = 1701840378;
+    const type = 'ReFreshBuilder';
+    const schemaUrl = 'ipfs://QmXPD8MJyWcfCqgSLnT7Uj6AGVYWxGfmx4ocGJLzyDNouN';
+    // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
+    const schemaClaimPathKey = "653965822922708731068757542488129789379726011791271792822447604518758144836"
 
-  const query = {
-    requestId,
-    schema: schemaBigInt,
-    claimPathKey: schemaClaimPathKey,
-    operator: Operators.GT,
-    slotIndex: 0,
-    value: [0, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
-    circuitIds: ['credentialAtomicQuerySigV2OnChain'],
-    skipClaimRevocationCheck: false,
-    claimPathNotExists: 0
-  };
+    const requestId = 1702134721;
 
-
-  query.queryHash = calculateQueryHash(
-      query.value,
-      query.schema,
-      query.slotIndex,
-      query.operator,
-      query.claimPathKey,
-      query.claimPathNotExists
-  ).toString();
-
-  // add the address of the contract just deployed
-
-  let erc20Verifier = await ethers.getContractAt("TokenTransferContract", contractAddress)
+    const query = {
+      requestId,
+      schema: schemaBigInt,
+      claimPathKey: schemaClaimPathKey,
+      operator: Operators.EQ,
+      slotIndex: 0,
+      value: [1, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
+      circuitIds: ['credentialAtomicQuerySigV2OnChain'],
+      skipClaimRevocationCheck: false,
+      claimPathNotExists: 0
+    };
 
 
-  const validatorAddress = "0x1E4a22540E293C0e5E8c33DAfd6f523889cFd878"; // sig validator
-  // const validatorAddress = "0x0682fbaA2E4C478aD5d24d992069dba409766121"; // mtp validator
+    query.queryHash = calculateQueryHash(
+        query.value,
+        query.schema,
+        query.slotIndex,
+        query.operator,
+        query.claimPathKey,
+        query.claimPathNotExists
+    ).toString();
 
-  const invokeRequestMetadata = {
-    id: '7f38a193-0918-4a48-9fac-36adfdb8b542',
-    typ: 'application/iden3comm-plain-json',
-    type: 'https://iden3-communication.io/proofs/1.0/contract-invoke-request',
-    thid: '7f38a193-0918-4a48-9fac-36adfdb8b542',
-    body: {
-      reason: 'airdrop participation',
-      transaction_data: {
-        contract_address: contractAddress,
-        method_id: 'b68967e2',
-        chain_id: 80001,
-        network: 'polygon-mumbai'
-      },
-      scope: [
-        {
-          id: query.requestId,
-          circuitId: query.circuitIds[0],
-          query: {
-            allowedIssuers: ['did:polygonid:polygon:mumbai:2qNzSKEuYnHwN7NgdmVM8DMYgpWVnCtnup1esfeCJ1'],
-            context: schemaUrl,
-            credentialSubject: {
-              token: {
-                $gt: query.value[0]
-              }
-            },
-            type
+    // add the address of the contract just deployed
+
+    let daoVerifier = await ethers.getContractAt("TokenTransferContract", contractAddress)
+
+
+    const validatorAddress = "0x1E4a22540E293C0e5E8c33DAfd6f523889cFd878"; // sig validator
+    // const validatorAddress = "0x0682fbaA2E4C478aD5d24d992069dba409766121"; // mtp validator
+
+    const invokeRequestMetadata = {
+      id: '7f38a193-0918-4a48-9fac-36adfdb8b542',
+      typ: 'application/iden3comm-plain-json',
+      type: 'https://iden3-communication.io/proofs/1.0/contract-invoke-request',
+      thid: '7f38a193-0918-4a48-9fac-36adfdb8b542',
+      body: {
+        reason: 'zk for Fund execution',
+        transaction_data: {
+          contract_address: contractAddress,
+          method_id: 'b68967e2',
+          chain_id: 80001,
+          network: 'polygon-mumbai'
+        },
+        scope: [
+          {
+            id: query.requestId,
+            circuitId: query.circuitIds[0],
+            query: {
+              allowedIssuers: allowedIssuers,
+              context: schemaUrl,
+              credentialSubject: {
+                builder: {
+                  $eq: query.value[0]
+                }
+              },
+              type
+            }
           }
-        }
-      ]
-    }
-  };
+        ]
+      }
+    };
 
-  try {
-    const txId = await erc20Verifier.setZKPRequest(
-        requestId, {
-          metadata: JSON.stringify(invokeRequestMetadata),
-          validator: validatorAddress,
-          data: packValidatorParams(query)
-        });
-    console.log("Request set: ", txId.hash);
-  } catch (e) {
-    console.log("error: ", e);
+    try {
+      const txId = await daoVerifier.setZKPRequest(
+          requestId, {
+            metadata: JSON.stringify(invokeRequestMetadata),
+            validator: validatorAddress,
+            data: packValidatorParams(query,allowedIssuers,isBuilder)
+          });
+      console.log("Request set: ", txId.hash);
+    } catch (e) {
+      console.log("error: ", e);
+    }
+  }else{
+    const schemaBigInt = "278967279552142591952300574090397990154"
+
+    const type = 'DAOVerificationToken';
+    const schemaUrl = 'ipfs://QmQb3pfSfmFZNQapcXk3zdnDnmmpqmiZ6YWFcCwyq14ajM';
+    // merklized path to field in the W3C credential according to JSONLD  schema e.g. birthday in the KYCAgeCredential under the url "https://raw.githubusercontent.com/iden3/claim-schema-vocab/main/schemas/json-ld/kyc-v3.json-ld"
+    const schemaClaimPathKey = "18694576051158235627586407093896000546137977171154473590197366253690295065210"
+
+    const requestId = 1701840378;
+
+    const query = {
+      requestId,
+      schema: schemaBigInt,
+      claimPathKey: schemaClaimPathKey,
+      operator: Operators.GT,
+      slotIndex: 0,
+      value: [0, ...new Array(63).fill(0)], // for operators 1-3 only first value matters
+      circuitIds: ['credentialAtomicQuerySigV2OnChain'],
+      skipClaimRevocationCheck: false,
+      claimPathNotExists: 0
+    };
+
+    console.log(query.value)
+
+
+    query.queryHash = calculateQueryHash(
+        query.value,
+        query.schema,
+        query.slotIndex,
+        query.operator,
+        query.claimPathKey,
+        query.claimPathNotExists
+    ).toString();
+
+    // add the address of the contract just deployed
+
+    let daoVerifier = await ethers.getContractAt("TokenTransferContract", contractAddress)
+
+
+    const validatorAddress = "0x1E4a22540E293C0e5E8c33DAfd6f523889cFd878"; // sig validator
+    // const validatorAddress = "0x0682fbaA2E4C478aD5d24d992069dba409766121"; // mtp validator
+
+    const invokeRequestMetadata = {
+      id: '7f38a193-0918-4a48-9fac-36adfdb8b542',
+      typ: 'application/iden3comm-plain-json',
+      type: 'https://iden3-communication.io/proofs/1.0/contract-invoke-request',
+      thid: '7f38a193-0918-4a48-9fac-36adfdb8b542',
+      body: {
+        reason: 'vote for project',
+        transaction_data: {
+          contract_address: contractAddress,
+          method_id: 'b68967e2',
+          chain_id: 80001,
+          network: 'polygon-mumbai'
+        },
+        scope: [
+          {
+            id: query.requestId,
+            circuitId: query.circuitIds[0],
+            query: {
+              allowedIssuers: allowedIssuers,
+              context: schemaUrl,
+              credentialSubject: {
+                token: {
+                  $gt: query.value[0]
+                }
+              },
+              type
+            }
+          }
+        ]
+      }
+    };
+
+    try {
+      const txId = await daoVerifier.setZKPRequest(
+          requestId, {
+            metadata: JSON.stringify(invokeRequestMetadata),
+            validator: validatorAddress,
+            data: packValidatorParams(query,allowedIssuers,isBuilder)
+          });
+      console.log("Request set: ", txId.hash);
+    } catch (e) {
+      console.log("error: ", e);
+    }
   }
+
 }
 
   

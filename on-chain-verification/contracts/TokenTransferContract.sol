@@ -7,7 +7,8 @@ import {ZKPVerifier} from "@iden3/contracts/verifiers/ZKPVerifier.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TokenTransferContract is ZKPVerifier {
-    uint64 public constant TRANSFER_REQUEST_ID = 1701840378;
+    uint64 public constant VOTE_REQUEST_ID = 1701840378;
+    uint64 public constant TRANSFER_REQUEST_ID = 1702134721;
 
     IERC20 public token;
     mapping(uint256 => uint256) public idMap;
@@ -48,23 +49,29 @@ contract TokenTransferContract is ZKPVerifier {
 
         // get user id
         uint256 id = inputs[1];
-        
+        if (requestId == VOTE_REQUEST_ID) {
+            // check that user id is not already voted
+            require(
+                idMap[id] == 0,
+                "user already voted"
+            );
+            idMap[id]=1;
+            totalVotes++;
+        } else if (requestId == TRANSFER_REQUEST_ID) {
 
-        require(
-            requestId == TRANSFER_REQUEST_ID && idMap[id] == 0,
-            "proof can not be submitted more than once"
-        );
-        idMap[id]=1;
-        totalVotes++;
+             if (totalVotes >= votesTheshhold){
+                        uint256 contractBalance = token.balanceOf(address(this));
+                        // require(contractBalance > 0, "Contract has no token balance");
 
-        if (totalVotes >= votesTheshhold){
-            uint256 contractBalance = token.balanceOf(address(this));
-            // require(contractBalance > 0, "Contract has no token balance");
-          
-            token.transfer(builder, contractBalance);
+                        token.transfer(builder, contractBalance);
 
-            emit TokensTransferred(address(this), builder, contractBalance);
+                        emit TokensTransferred(address(this), builder, contractBalance);
+                    }
         }
+
+
+
+
         
 
        
